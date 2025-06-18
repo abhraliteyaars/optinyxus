@@ -1,6 +1,7 @@
-# Price Optimizer
+# Price and Marketing Optimizer
 
-This is a price optimization tool that applies constraints and optimization logic to uploaded data.
+This is a price and marketing spend optimization tool that applies constraints and optimization logic to uploaded data.
+
 
 ## Features
 - Sales, Profit, and Profitability Maximization
