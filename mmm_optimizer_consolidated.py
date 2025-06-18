@@ -25,7 +25,7 @@ def run_mmm_optimizer(base_file_path, input_file_path):
     base_roi = round(base_sales/base_spend,2)
     
     #universe file with all possible combinations
-    df_universe = pd.read_csv('static/onetimecalculation/mmm_universe_of_combination.csv')
+    df_universe = pd.read_csv('static/onetimecalculation/mmm_universe_of_combination_sample.csv')
     
     #interpretation of inputs
     
