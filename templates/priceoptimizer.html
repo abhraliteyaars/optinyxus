@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price Optimization</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <div class="logo">
+                <a href="{{ url_for('index') }}">
+                    <img src="{{ url_for('static', filename='new_logo.png') }}" alt="Logo" class="circular-logo">
+                </a>
+            </div>
+            <h1>PriceGenix</h1>
+            <nav>
+                <ul>
+                    <li><a href="#">Solutions</a></li>
+                    <li><a href="#">Vision</a></li>
+                    <li><a href="#">Industry</a></li>
+                    <li><a href="#" class="button_1">Get Started</a></li>
+                </ul>
+
+            </nav>
+            </div>
+        </div>
+    </header>
+    <main>
+        <div class="container">
+            <!-- Left Section: Form -->
+            <div class="form-section">
+                {% if error_message %}
+                <div class="error-message">
+                    {{ error_message }}
+                </div>
+                {% endif %}
+                <form action="/processpriceoptimizer" method="post" enctype="multipart/form-data">
+                    {% if last_uploaded_file %}
+                    <div class="last-uploaded-file">
+                        Last uploaded file: <strong>{{ last_uploaded_file }}</strong>
+                    </div>
+                    {% endif %}
+                    <div class="file-upload">
+                        <label for="file" class="file-label">Drag & Drop File Here or</label>
+                        <input type="file" name="file" id="file" required>
+                    </div>
+
+                    <h3>Optimization Type</h3>
+                    <div class="optimization-options">
+                        <label>
+                            <input type="radio" name="optimization" value="Sales Maximization" required 
+                                {% if saved_inputs.optimization == 'Sales Maximization' %}checked{% endif %}>
+                            Sales Maximization
+                        </label>
+                        <label>
+                            <input type="radio" name="optimization" value="Profit Maximization"
+                                {% if saved_inputs.optimization == 'Profit Maximization' %}checked{% endif %}>
+                            Profit Maximization
+                        </label>
+                        <label>
+                            <input type="radio" name="optimization" value="Profitability Maximization"
+                                {% if saved_inputs.optimization == 'Profitability Maximization' %}checked{% endif %}>
+                            Profitability Maximization
+                        </label>
+                    </div>
+
+                    <h3>Constraints</h3>
+                    <div class="constraint-row">
+                        <label for="quantity_min">Quantity Constraint:</label>
+                        <input type="text" name="quantity_min" id="quantity_min" placeholder="Min %" class="small-input"
+                            value="{{ saved_inputs.quantity_min }}">
+                        <input type="text" name="quantity_max" placeholder="Max %" class="small-input"
+                            value="{{ saved_inputs.quantity_max }}">
+                    </div>
+                    <div class="constraint-row">
+                        <label for="discount_min">Discount Constraint:</label>
+                        <input type="text" name="discount_min" id="discount_min" placeholder="Min %" class="small-input"
+                            value="{{ saved_inputs.discount_min }}">
+                        <input type="text" name="discount_max" placeholder="Max %" class="small-input"
+                            value="{{ saved_inputs.discount_max }}">
+                    </div>
+                    <div class="constraint-row">
+                        <label for="sales_min">Sales Constraint:</label>
+                        <input type="text" name="sales_min" id="sales_min" placeholder="Min" class="small-input"
+                            value="{{ saved_inputs.sales_min }}">
+                        <input type="text" name="sales_max" placeholder="Max" class="small-input"
+                            value="{{ saved_inputs.sales_max }}">
+                    </div>
+                    <div class="constraint-row">
+                        <label for="profit_min">Profit Constraint:</label>
+                        <input type="text" name="profit_min" id="profit_min" placeholder="Min" class="small-input"
+                            value="{{ saved_inputs.profit_min }}">
+                        <input type="text" name="profit_max" placeholder="Max" class="small-input"
+                            value="{{ saved_inputs.profit_max }}">
+                    </div>
+                    <div class="constraint-row">
+                        <label for="profitability_min">Profitability Constraint:</label>
+                        <input type="text" name="profitability_min" id="profitability_min" placeholder="Min" class="small-input"
+                            value="{{ saved_inputs.profitability_min }}">
+                        <input type="text" name="profitability_max" placeholder="Max" class="small-input"
+                            value="{{ saved_inputs.profitability_max }}">
+                    </div>
+
+                    <button type="submit" class="btn-primary">Run Engine</button>
+                </form>
+            </div>
+
+            <!-- Right Section: Results -->
+            {% if table %}
+            <div class="results-section">
+                <h3>Optimization Results</h3>
+
+                <div class="sumary-sections">
+                    <!-- Summary Section -->
+                    <div class="optimized-summary-section">
+                        <p><strong>Total Optimized Sales:</strong> {{ total_gmv }}</p>
+                        <p><strong>Total Optimized Spend:</strong> {{ total_gp }}</p>
+                        <p><strong>Average Optimized GP%:</strong> {{ avg_gp_per }}</p>
+                    </div>
+
+                    <div class="base-summary-section">
+                        <p><strong>Total Base GMV:</strong> {{ total_base_gmv }}</p>
+                        <p><strong>Total Base GP:</strong> {{ total_base_gp }}</p>
+                        <p><strong>Average Base GP%:</strong> {{ avg_base_gp_per }}</p>
+                    </div>
+                </div>        
+
+                <!-- Slider for Table -->
+                <div class="table-slider">
+                    <div class="table-container">
+                        {{ table|safe }}
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <form action="/priceoptimizer" method="get" style="display: inline;">
+                        <button type="submit" class="btn">Refresh</button>
+                    </form>
+                    <form action="/download" method="post" style="display: inline;">
+                        <button type="submit" class="btn">Download Results</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2024 Price Genix. All rights reserved.</p>
+    </footer>
+</body>
+</html>

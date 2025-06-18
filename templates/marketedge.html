@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MarketEdge</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <div class="logo">
+                <a href="{{ url_for('index') }}">
+                    <img src="{{ url_for('static', filename='new_logo.png') }}" alt="Logo" class="circular-logo">
+                </a>
+            </div>
+            <h1>MarketEdge</h1>
+            <nav>
+                <ul>
+                    <li><a href="#">Solutions</a></li>
+                    <li><a href="#">Vision</a></li>
+                    <li><a href="#">Industry</a></li>
+                    <li><a href="#" class="button_1">Get Started</a></li>
+                </ul>
+
+            </nav>
+        </div>
+    </header>
+    <main>
+        <div class="container">
+            <!-- Left Section: Form -->
+            <div class="form-section">
+                {% if error_message %}
+                <div class="error-message">
+                    {{ error_message }}
+                </div>
+                {% endif %}
+                <form action="/processmarketedge" method="post" enctype="multipart/form-data">
+                    {% if last_uploaded_file %}
+                    <div class="last-uploaded-file">
+                        Last uploaded file: <strong>{{ last_uploaded_file }}</strong>
+                    </div>
+                    {% endif %}
+                    <div class="file-upload">
+                        <label for="file" class="file-label">Drag & Drop File Here or</label>
+                        <input type="file" name="file" id="file" required>
+                    </div>
+
+                    <h3>Optimization Type</h3>
+                    <div class="optimization-options">
+                        <label>
+                            <input type="radio" name="optimization" value="Sales Maximization" required 
+                                {% if saved_inputs.optimization == 'Sales Maximization' %}checked{% endif %}>
+                            Sales Maximization
+                        </label>
+                        <label>
+                            <input type="radio" name="optimization" value="Spend Minimization"
+                                {% if saved_inputs.optimization == 'Spend Minimization' %}checked{% endif %}>
+                            Spend Minimization
+                        </label>
+                        <label>
+                            <input type="radio" name="optimization" value="ROI Maximization"
+                                {% if saved_inputs.optimization == 'ROI Maximization' %}checked{% endif %}>
+                            ROI Maximization
+                        </label>
+                    </div>
+
+                    <h3>Constraints</h3>
+                    <div class="constraint-row">
+                        <!-- when we click on the Sales constraint text this will highlight the sales min box -->
+                        <label for="sales_min">Sales Constraint:</label>
+                        <input type="text" name="sales_min" id="sales_min" placeholder="Min" class="small-input"
+                            value="{{ saved_inputs.sales_min }}">
+                        <input type="text" name="sales_max" placeholder="Max" class="small-input"
+                            value="{{ saved_inputs.sales_max }}">
+                    </div>
+
+                    <div class="constraint-row">
+                        <label for="spend_min">Spend Constraint:</label>
+                        <input type="text" name="spend_min" id="spend_min" placeholder="Min" class="small-input"
+                            value="{{ saved_inputs.spend_min }}">
+                        <input type="text" name="spend_max" placeholder="Max" class="small-input"
+                            value="{{ saved_inputs.spend_max }}">
+                    </div>
+
+                    <div class="constraint-row">
+                        <label for="roi_min">ROI Constraint:</label>
+                        <input type="text" name="roi_min" id="roi_min" placeholder="Min %" class="small-input"
+                            value="{{ saved_inputs.roi_min }}">
+                        <input type="text" name="roi_max" placeholder="Max %" class="small-input"
+                            value="{{ saved_inputs.roi_max }}">
+                    </div>
+
+                    <button type="submit" class="btn-primary">Run Engine</button>
+                </form>
+            </div>
+
+            <!-- Right Section: Results -->
+            {% if table %}
+            <div class="results-section">
+                <h3>Optimization Results</h3>
+
+                <div class="sumary-sections">
+                    <!-- Summary Section -->
+                    <div class="optimized-summary-section">
+                        <p><strong>Total Optimized Sales:</strong> {{ total_optimized_sales }}</p>
+                        <p><strong>Total Optimized Spend:</strong> {{ total_optimized_spend }}</p>
+                        <p><strong>Total Optimized ROI%:</strong> {{ total_opimized_roi }}</p>
+                    </div>
+
+                    <div class="base-summary-section">
+                        <p><strong>Total Base Sales:</strong> {{ total_base_sales }}</p>
+                        <p><strong>Total Base Spend:</strong> {{ total_base_spend }}</p>
+                        <p><strong>Average Base ROI%:</strong> {{ total_base_roi }}</p>
+                    </div>
+                </div>        
+
+                <!-- Slider for Table -->
+                <div class="table-slider">
+                    <div class="table-container">
+                        {{ table|safe }}
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <form action="/marketedge" method="get" style="display: inline;">
+                        <button type="submit" class="btn">Refresh</button>
+                    </form>
+                    <form action="/download" method="post" style="display: inline;">
+                        <button type="submit" class="btn">Download Results</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2024 Price Genix. All rights reserved.</p>
+    </footer>
+</body>
+</html>

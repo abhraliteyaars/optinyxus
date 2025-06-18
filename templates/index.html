@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptiNyxus</title>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>OptiNyxus</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <a href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='new_logo.png') }}" alt="Logo" class="circular-logo">
+            </a>
+        </div>
+            <nav>
+                <ul>
+                    <li><a href="#">Solutions</a></li>
+                    <li><a href="#">Vision</a></li>
+                    <li><a href="#">Industry</a></li>
+                    <li><a href="#" class="button_1">Get Started</a></li>
+                </ul>
+
+            </nav>
+        </div>
+    </header>
+
+    <section id="showcase">
+        <div class="container">
+            <h1>Harness AI<br>Maximise Impact<br>Unlock Business Value</h1>
+            <p>Leverage Our Solutions to Enhance Efficiency, Performance, Growth and Profitability.</p>
+        </div>
+    </section>
+
+    <section class="product-lines">
+        <div class="container">
+            <h2>Our Product Lines</h2>
+            <div class="product-grid">
+                <div class="product-item">
+                    <form action="/priceoptimizer" method="get">
+                        <button type="submit" class="btn">PriceGenix</button>
+                        <p>Building Profitability</p>
+                    </form>
+                </div>
+                <div class="product-item">
+                    <form action="/marketedge" method="get">
+                        <button type="submit" class="btn">MarketEdge</button>
+                        <p>All About Marketing</p>
+                    </form>
+                </div>
+                <div class="product-item">
+                    <form action="#" method="get">  <!-- Replace # with the correct route -->
+                        <button type="submit" class="btn">OptiFlow</button>
+                        <p>Adds to Experience</p>
+                    </form>
+                </div>
+                <div class="product-item">
+                    <form action="#" method="get">  <!-- Replace # with the correct route -->
+                        <button type="submit" class="btn">EngageSync</button>
+                        <p>Customer Centricity</p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- <section class="product-lines">
+        <div class="container">
+            <h2>Our Product Lines</h2>
+            <div class="product-grid">
+                <div class="product-item">
+                            <div class="product-item">
+                                <div style="display: flex; gap: 20px;">
+                                    <form action="/priceoptimizer" method="get">
+                                        <button type="submit" class="btn">PriceGenix</button>
+                                        <p>Building Profitability</p>
+                                    </form>
+                                    <form action="/marketedge" method="get">
+                                        <button type="submit" class="btn">MarketEdge</button>
+                                        <p>All About Marketing</p>
+                                </div>
+
+                            </div>
+                        </form>
+                    </div>
+                </div> -->
+
+
+                    <!-- <h3><a href="marketedge.html">MarketEdge</a></h3>
+                    <p>All About Marketing</p>
+                </div>
+                <div class="product-item">
+                    <h3><a href="priceoptimizer.html">PriceGenix</a></h3>
+                    <p>Building Profitability</p>
+                </div>
+                <div class="product-item">
+                    <h3><a href="priceoptimizer.html">OptiFlow</a></h3>
+                    <p>Adds to Experience</p>
+                </div>
+                <div class="product-item">
+                    <h3><a href="priceoptimizer.html">EngageSync</a></h3>
+                    <p>Customer Centricity</p>
+                </div> -->
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>OptiNyxus, Copyright &copy; 2025</p>
+    </footer>
+</body>
+</html>
