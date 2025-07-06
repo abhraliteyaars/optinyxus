@@ -1,12 +1,10 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[487]:
-
-
 import numpy as np
 import pandas as pd
+from utils import neonDB as ndb
+from sqlalchemy.sql import text
 from babel.numbers import format_currency
+
+
 
 def run_price_optimizer(upload_file_path, input_file_path):
     """
@@ -34,7 +32,7 @@ def run_price_optimizer(upload_file_path, input_file_path):
     # Calculate the total units from the upload_file
     total_units_from_upload = df['Units (Pred.)'].sum()
 
-    #calculate base numbers
+    #calculate base numbers, this will be used to compare the output with the optimized numbers
     df_init['Discount'] = df_init['MOP'] - df_init['Test Price']
     df_init['Discount %'] = (df_init['Discount'] / df_init['MOP']) * 100
     df_init['Discount_per_unit'] = df_init['Discount'] / df_init['Units (Pred.)']
@@ -42,10 +40,8 @@ def run_price_optimizer(upload_file_path, input_file_path):
     df_init['GP'] = df_init['GP_per_unit'] * df_init['Units (Pred.)']
     df_init['GMV'] = df_init['Test Price'] * df_init['Units (Pred.)']
     df_init['GP_%'] = (df_init['GP'] / df_init['GMV']) * 100
-    
 
-    #init_values
-    
+  
 
     ###______________OBJ FUNCTION__________
     if df['Sales Maximization'][0] == 1:
@@ -93,10 +89,7 @@ def run_price_optimizer(upload_file_path, input_file_path):
     else:
         quantity_upper_bound = (df['Stock Available'] * df['Quantity Constraint Max'][0] / 100)
 
-    #     #log the profitability constraints
-    # print('quantity upper:', quantity_upper_bound)
-    # print('quantity lower:', quantity_lower_bound)
-
+    	
     # 5. Discount
     discount_lower_bound = df['Discount % Constraint Min']
     if df['Discount % Constraint Max'][0] == 0:
@@ -104,13 +97,15 @@ def run_price_optimizer(upload_file_path, input_file_path):
     else:
         discount_upper_bound = df['Discount % Constraint Max']
 
+    
+
     # DataFrame to put together all constraints at article level
     article_list = df['Article#'].to_numpy()
     columns = ['Article#', 'Quantity Constraint Max', 'Quantity Constraint Min',
                'Discount % Constraint Min', 'Discount % Constraint Max']
-    data = [article_list, quantity_upper_bound.to_numpy(), quantity_lower_bound.to_numpy(),
-            discount_lower_bound.to_numpy(), discount_upper_bound.to_numpy()]
+    data = [article_list, quantity_upper_bound.to_numpy(), quantity_lower_bound.to_numpy(),discount_lower_bound.to_numpy(), discount_upper_bound.to_numpy()]
     df_constraints = pd.DataFrame(columns=columns, data=np.array(data).T)
+
 
     # Get values from the first row
     max_discount = df_constraints.loc[0, 'Discount % Constraint Max']
@@ -120,65 +115,92 @@ def run_price_optimizer(upload_file_path, input_file_path):
     df_constraints['Discount % Constraint Max'] = max_discount
     df_constraints['Discount % Constraint Min'] = min_discount
 
-    #######____________Reading the master file containing all combinations_______
-    df_universe = pd.read_csv('static/onetimecalculation/universe_of_combination_price.csv')
+    #quantity constraints for each sku
+    bosch_qty_constraint_min = df_constraints['Quantity Constraint Min'][0]
+    bosch_qty_constraint_max = df_constraints['Quantity Constraint Max'][0]
+    haier_qty_constraint_min = df_constraints['Quantity Constraint Min'][1]
+    haier_qty_constraint_max = df_constraints['Quantity Constraint Max'][1]
+    ifb_qty_constraint_min = df_constraints['Quantity Constraint Min'][2]
+    ifb_qty_constraint_max = df_constraints['Quantity Constraint Max'][2]
+    lg_qty_constraint_min = df_constraints['Quantity Constraint Min'][3]
+    lg_qty_constraint_max = df_constraints['Quantity Constraint Max'][3]
+    samsung_qty_constraint_min = df_constraints['Quantity Constraint Min'][4]
+    samsung_qty_constraint_max = df_constraints['Quantity Constraint Max'][4]
+    whirlpool_qty_constraint_min = df_constraints['Quantity Constraint Min'][5]
+    whirlpool_qty_constraint_max = df_constraints['Quantity Constraint Max'][5]
 
-    #########____________Constraint application_________
+    #discount constraint for each sku
+    bosch_discount_constraint_min = df_constraints['Discount % Constraint Min'][0]
+    bosch_discount_constraint_max = df_constraints['Discount % Constraint Max'][0]
+    haier_discount_constraint_min = df_constraints['Discount % Constraint Min'][1]
+    haier_discount_constraint_max = df_constraints['Discount % Constraint Max'][1]
+    ifb_discount_constraint_min = df_constraints['Discount % Constraint Min'][2]
+    ifb_discount_constraint_max = df_constraints['Discount % Constraint Max'][2]
+    lg_discount_constraint_min = df_constraints['Discount % Constraint Min'][3]
+    lg_discount_constraint_max = df_constraints['Discount % Constraint Max'][3]
+    samsung_discount_constraint_min = df_constraints['Discount % Constraint Min'][4]
+    samsung_discount_constraint_max = df_constraints['Discount % Constraint Max'][4]
+    whirlpool_discount_constraint_min = df_constraints['Discount % Constraint Min'][5]
+    whirlpool_discount_constraint_max = df_constraints['Discount % Constraint Max'][5]
 
-    ## Quantity
-    df_universe = (df_universe[
-        (df_universe['Units_Bosch'] > df_constraints['Quantity Constraint Min'][0]) &
-        (df_universe['Units_Bosch'] < df_constraints['Quantity Constraint Max'][0]) &
-        (df_universe['Units_Haier'] > df_constraints['Quantity Constraint Min'][1]) &
-        (df_universe['Units_Haier'] < df_constraints['Quantity Constraint Max'][1]) &
-        (df_universe['Units_IFB'] > df_constraints['Quantity Constraint Min'][2]) &
-        (df_universe['Units_IFB'] < df_constraints['Quantity Constraint Max'][2]) &
-        (df_universe['Units_LG'] > df_constraints['Quantity Constraint Min'][3]) &
-        (df_universe['Units_LG'] < df_constraints['Quantity Constraint Max'][3]) &
-        (df_universe['Units_Samsung'] > df_constraints['Quantity Constraint Min'][4]) &
-        (df_universe['Units_Samsung'] < df_constraints['Quantity Constraint Max'][4]) &
-        (df_universe['Units_Whirlpool'] > df_constraints['Quantity Constraint Min'][5]) &
-        (df_universe['Units_Whirlpool'] < df_constraints['Quantity Constraint Max'][5])
-    ])
-
-    ## Discount
-    df_universe = (df_universe[
-        (df_universe['Discount_%_Bosch'] > df_constraints['Discount % Constraint Min'][0]) &
-        (df_universe['Discount_%_Bosch'] < df_constraints['Discount % Constraint Max'][0]) &
-        (df_universe['Discount_%_Haier'] > df_constraints['Discount % Constraint Min'][1]) &
-        (df_universe['Discount_%_Haier'] < df_constraints['Discount % Constraint Max'][1]) &
-        (df_universe['Discount_%_IFB'] > df_constraints['Discount % Constraint Min'][2]) &
-        (df_universe['Discount_%_IFB'] < df_constraints['Discount % Constraint Max'][2]) &
-        (df_universe['Discount_%_LG'] > df_constraints['Discount % Constraint Min'][3]) &
-        (df_universe['Discount_%_LG'] < df_constraints['Discount % Constraint Max'][3]) &
-        (df_universe['Discount_%_Samsung'] > df_constraints['Discount % Constraint Min'][4]) &
-        (df_universe['Discount_%_Samsung'] < df_constraints['Discount % Constraint Max'][4]) &
-        (df_universe['Discount_%_Whirlpool'] > df_constraints['Discount % Constraint Min'][5]) &
-        (df_universe['Discount_%_Whirlpool'] < df_constraints['Discount % Constraint Max'][5])
-    ])
-
-    ### Portfolio constraints
-    df_universe['GP%'] = (df_universe['Total_GP']/df_universe['Total_GMV'])*100
-  
-
-    df_universe = df_universe[(df_universe['Total_GMV'] < sales_constraint_upper) &
-                               (df_universe['Total_GMV'] > sales_constraint_lower)]
-    df_universe = df_universe[(df_universe['Total_GP'] < profit_constraint_upper) &
-                               (df_universe['Total_GP'] > profit_constraint_lower)]
+    # build the SQL query with constraints
 
 
-    print(df_universe['Total_GMV'].head())
-    print(df_universe['Total_GP'].head())
-    print(df_universe['GP%'].head())
-    print('profitability upper constraint',profitability_constraint_upper)
-    df_universe = df_universe[(df_universe['GP%'] < profitability_constraint_upper) &
-                               (df_universe['GP%'] > profitability_constraint_lower)]
+    query = text(""" select * from price_universe 
+                 where "Total_GMV">= :sales_constraint_lower and "Total_GMV"<= :sales_constraint_upper
+                 and "Total_GP">= :profit_constraint_lower and "Total_GP" <= :profit_constraint_upper
+                 and ("Total_GP"/"Total_GMV")*100 >= :profitability_constraint_lower and ("Total_GP"/"Total_GMV")*100 <= :profitability_constraint_upper
+                 and "Units_Bosch" >= :bosch_qty_constraint_min and "Units_Bosch" <= :bosch_qty_constraint_max
+                 and "Units_Haier" >= :haier_qty_constraint_min and "Units_Haier" <= :haier_qty_constraint_max
+                 and "Units_IFB" >= :ifb_qty_constraint_min and "Units_IFB" <= :ifb_qty_constraint_max
+                 and "Units_LG" >= :lg_qty_constraint_min and "Units_LG" <= :lg_qty_constraint_max
+                 and "Units_Samsung" >= :samsung_qty_constraint_min and "Units_Samsung" <= :samsung_qty_constraint_max
+                 and "Units_Whirlpool" >= :whirlpool_qty_constraint_min and "Units_Whirlpool" <= :whirlpool_qty_constraint_max
+                 and "Discount_%_Bosch" >= :bosch_discount_constraint_min and "Discount_%_Bosch" <= :bosch_discount_constraint_max
+                 and "Discount_%_Haier" >= :haier_discount_constraint_min and "Discount_%_Haier" <= :haier_discount_constraint_max
+                 and "Discount_%_IFB" >= :ifb_discount_constraint_min and "Discount_%_IFB" <= :ifb_discount_constraint_max
+                 and "Discount_%_LG" >= :lg_discount_constraint_min and "Discount_%_LG" <= :lg_discount_constraint_max
+                 and "Discount_%_Samsung" >= :samsung_discount_constraint_min and "Discount_%_Samsung" <= :samsung_discount_constraint_max
+                 and "Discount_%_Whirlpool" >= :whirlpool_discount_constraint_min and "Discount_%_Whirlpool" <= :whirlpool_discount_constraint_max                   
+                 """)
+    params = {
+        'sales_constraint_lower':sales_constraint_lower,
+        'sales_constraint_upper':sales_constraint_upper,
+        'profit_constraint_lower': profit_constraint_lower,
+        'profit_constraint_upper': profit_constraint_upper,
+        'profitability_constraint_lower': profitability_constraint_lower,
+        'profitability_constraint_upper': profitability_constraint_upper,
+        'bosch_qty_constraint_min': bosch_qty_constraint_min,
+        'bosch_qty_constraint_max': bosch_qty_constraint_max,
+        'haier_qty_constraint_min': haier_qty_constraint_min,
+        'haier_qty_constraint_max': haier_qty_constraint_max,
+        'ifb_qty_constraint_min': ifb_qty_constraint_min,
+        'ifb_qty_constraint_max': ifb_qty_constraint_max,
+        'lg_qty_constraint_min': lg_qty_constraint_min,
+        'lg_qty_constraint_max': lg_qty_constraint_max,
+        'samsung_qty_constraint_min': samsung_qty_constraint_min,
+        'samsung_qty_constraint_max': samsung_qty_constraint_max,
+        'whirlpool_qty_constraint_min': whirlpool_qty_constraint_min,
+        'whirlpool_qty_constraint_max': whirlpool_qty_constraint_max,
+        'bosch_discount_constraint_min': bosch_discount_constraint_min,
+        'bosch_discount_constraint_max': bosch_discount_constraint_max,
+        'haier_discount_constraint_min': haier_discount_constraint_min, 
+        'haier_discount_constraint_max': haier_discount_constraint_max,
+        'ifb_discount_constraint_min': ifb_discount_constraint_min,
+        'ifb_discount_constraint_max': ifb_discount_constraint_max,
+        'lg_discount_constraint_min': lg_discount_constraint_min,
+        'lg_discount_constraint_max': lg_discount_constraint_max,
+        'samsung_discount_constraint_min': samsung_discount_constraint_min,
+        'samsung_discount_constraint_max': samsung_discount_constraint_max,
+        'whirlpool_discount_constraint_min': whirlpool_discount_constraint_min,
+        'whirlpool_discount_constraint_max': whirlpool_discount_constraint_max
+    }
+
+    # Execute the query with parameters
+    df_universe = pd.read_sql_query(query, con=ndb.engine,params=params)
+
     
-    print('Max GP%',df_universe['GP%'].max())
-
-
-    
-    # New Constraint: Sum of all quantities sold should equal the sum of units from the upload_file
+    # New Constraint: Sum of all quantities sold should be within 50% of total units from upload_file
     df_universe['Total_Units_Sold'] = (
         pd.to_numeric(df_universe['Units_Bosch'], errors='coerce').fillna(0) +
         pd.to_numeric(df_universe['Units_Haier'], errors='coerce').fillna(0) +
@@ -188,11 +210,7 @@ def run_price_optimizer(upload_file_path, input_file_path):
         pd.to_numeric(df_universe['Units_Whirlpool'], errors='coerce').fillna(0)
     )
 
-
-    # Apply the constraint
-    df_universe = df_universe[
-        (df_universe['Total_Units_Sold'] >= total_units_from_upload * 0.5)
-    ]
+        
 
     #########___________Run objective function_________
 
@@ -201,7 +219,7 @@ def run_price_optimizer(upload_file_path, input_file_path):
     elif obj_function == 'Profit Maximization':
         output_df = df_universe[df_universe['Total_GP'] == df_universe['Total_GP'].max()]
     elif obj_function == 'Profitability Maximization':
-        output_df = df_universe[df_universe['GP%'] == df_universe['GP%'].max()]
+        output_df = df_universe[df_universe['Total_GMV']/df_universe['Total_GP'] == df_universe['Total_GMV']/df_universe['Total_GP'].max()]
     else:  # Default: maximize sales
         output_df = df_universe[df_universe['Total_GMV'] == df_universe['Total_GMV'].max()]
 
@@ -257,40 +275,41 @@ def run_price_optimizer(upload_file_path, input_file_path):
         final_long_df['GP'] = pd.to_numeric(final_long_df['GP'], errors='coerce').fillna(0)
         final_long_df['GMV'] = pd.to_numeric(final_long_df['GMV'], errors='coerce').fillna(0)
 
-        # Calculate total GMV and GP
-        total_gmv_value = final_long_df['GMV'].sum()
-        total_gp_value = final_long_df['GP'].sum()
+    # Calculate total GMV and GP
+    total_gmv_value = final_long_df['GMV'].sum()
+    total_gp_value = final_long_df['GP'].sum()
 
-        print(final_long_df['GMV'])
+    print(final_long_df['GMV'])
 
-        # Ensure total_gp_value and total_gmv_value are numeric
-        total_gmv_value = total_gmv_value if pd.notnull(total_gmv_value) else 0
-        total_gp_value = total_gp_value if pd.notnull(total_gp_value) else 0
+    # Ensure total_gp_value and total_gmv_value are numeric
+    total_gmv_value = total_gmv_value if pd.notnull(total_gmv_value) else 0
+    total_gp_value = total_gp_value if pd.notnull(total_gp_value) else 0
 
-        # Format Total GMV and Total GP as INR
-        total_gmv = format_currency(total_gmv_value, 'INR', locale='en_IN')
-        total_gp = format_currency(total_gp_value, 'INR', locale='en_IN')
-
-
-        total_base_gmv_value = df_init['GMV'].sum()
-        total_base_gmv = format_currency(total_base_gmv_value, 'INR', locale='en_IN')
-        
-        total_base_gp_value = df_init['GP'].sum()
-        total_base_gp = format_currency(total_base_gp_value, 'INR', locale='en_IN')
-        
+    # Format Total GMV and Total GP as INR
+    total_gmv = format_currency(total_gmv_value, 'INR', locale='en_IN')
+    total_gp = format_currency(total_gp_value, 'INR', locale='en_IN')
 
 
-        # Calculate the average GP% as the mean of the GP_% column
-        avg_gp_per_value = (total_gp_value/total_gmv_value)*100
-        avg_gp_per = f"{avg_gp_per_value:.2f}%" if pd.notnull(avg_gp_per_value) else "0.00%"
+    total_base_gmv_value = df_init['GMV'].sum()
+    print(total_base_gmv_value)
+    total_base_gmv = format_currency(total_base_gmv_value, 'INR', locale='en_IN')
+    
+    total_base_gp_value = df_init['GP'].sum()
+    total_base_gp = format_currency(total_base_gp_value, 'INR', locale='en_IN')
+    
 
-        avg_base_gp_per = (df_init['GP'].sum() / df_init['GMV'].sum()) *100
-        avg_base_gp_per = f"{avg_base_gp_per:.2f}%" if pd.notnull(avg_base_gp_per) else "0.00%"
 
-        # Debugging: Print total units from upload_file
-        print(f"avg_gp_per: {avg_gp_per}")
-        print(f"Total Base GMV: {total_base_gmv}")
-        print(f"Total Base GP: {total_base_gp}")
+    # Calculate the average GP% as the mean of the GP_% column
+    avg_gp_per_value = (total_gp_value/total_gmv_value)*100
+    avg_gp_per = f"{avg_gp_per_value:.2f}%" if pd.notnull(avg_gp_per_value) else "0.00%"
+
+    avg_base_gp_per = (df_init['GP'].sum() / df_init['GMV'].sum()) *100
+    avg_base_gp_per = f"{avg_base_gp_per:.2f}%" if pd.notnull(avg_base_gp_per) else "0.00%"
+
+    # Debugging: Print total units from upload_file
+    print(f"avg_gp_per: {avg_gp_per}")
+    print(f"Total Base GMV: {total_base_gmv}")
+    print(f"Total Base GP: {total_base_gp}")
 
 
     # Format specified columns as INR

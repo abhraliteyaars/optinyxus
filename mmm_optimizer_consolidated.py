@@ -1,11 +1,8 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[351]:
-
-
 import pandas as pd
 from babel.numbers import format_currency
+from utils import neonDB as ndb
+from sqlalchemy.sql import text
+
 def run_mmm_optimizer(base_file_path, input_file_path):
     """
     Function to process the uploaded file and input file, apply constraints, 
@@ -23,11 +20,15 @@ def run_mmm_optimizer(base_file_path, input_file_path):
     base_spend = df_base['Test Spend'].sum()
     base_sales = df_base['GMV'].sum()
     base_roi = round(base_sales/base_spend,2)
-    
-    #universe file with all possible combinations
-    df_universe = pd.read_csv('static/onetimecalculation/mmm_universe_of_combination_sample.csv')
-    
-    #interpretation of inputs
+    print('df_input:',df_input.head())
+     
+    #read the universe of combinations file
+        ### Filter the universe of combination such that it contains data within constraints
+
+    query = text(""" select * from spend_universe """)
+
+    # Execute the query with parameters
+    df_universe = pd.read_sql_query(query, con=ndb.engine)
     
     ##########---------------Constraint building---------------------
     
@@ -37,7 +38,7 @@ def run_mmm_optimizer(base_file_path, input_file_path):
         spend_constraint_min = df_universe['Total_Spend'].min()
     else:
         spend_constraint_min = df_input['Spend Constraint Min'][0]
-    
+  
     
     #if user gives no upper spend constraint then we assume maximum spend across channels (spend_upper) else the value provided by user
     if(df_input['Spend Constraint Max'].values[0]==0):
@@ -68,6 +69,7 @@ def run_mmm_optimizer(base_file_path, input_file_path):
     else:
         roi_constraint_min = df_input['ROI % Constraint Min'][0]
     
+
     
     #if user gives no ROI max constraint then we assume maximum possible which is Sales_max/Spend_min else the value provided by user
     if(df_input['ROI % Constraint Max'].values[0]==0):
@@ -78,10 +80,11 @@ def run_mmm_optimizer(base_file_path, input_file_path):
     ### Filter the universe of combination such that it contains data within constraints
     
     
-    df_universe = df_universe[(df_universe['Total_Spend']>spend_constraint_min) & (df_universe['Total_Spend']<spend_constraint_max)]
-    df_universe = df_universe[(df_universe['Total_Sales']>sales_constraint_min) & (df_universe['Total_Sales']<sales_constraint_max)]
-    df_universe = df_universe[(df_universe['Net_ROI']>roi_constraint_min) & (df_universe['Net_ROI']<roi_constraint_max)]
+    df_universe = df_universe[(df_universe['Total_Spend']>=spend_constraint_min) & (df_universe['Total_Spend']<=spend_constraint_max)]
+    df_universe = df_universe[(df_universe['Total_Sales']>=sales_constraint_min) & (df_universe['Total_Sales']<=sales_constraint_max)]
+    df_universe = df_universe[(df_universe['Net_ROI']>=roi_constraint_min) & (df_universe['Net_ROI']<=roi_constraint_max)]
     
+  
     
     ##########---------------Objective function ---------------------
     

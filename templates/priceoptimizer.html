@@ -113,9 +113,9 @@
                     </div>
                     <div class="constraint-row">
                         <label for="profitability_min">Profitability Constraint:</label>
-                        <input type="text" name="profitability_min" id="profitability_min" placeholder="Min" class="small-input"
+                        <input type="text" name="profitability_min" id="profitability_min" placeholder="Min %" class="small-input"
                             value="{{ saved_inputs.profitability_min }}">
-                        <input type="text" name="profitability_max" placeholder="Max" class="small-input"
+                        <input type="text" name="profitability_max" placeholder="Max %" class="small-input"
                             value="{{ saved_inputs.profitability_max }}">
                     </div>
 
@@ -132,7 +132,7 @@
                     <!-- Summary Section -->
                     <div class="optimized-summary-section">
                         <p><strong>Total Optimized Sales:</strong> {{ total_gmv }}</p>
-                        <p><strong>Total Optimized Spend:</strong> {{ total_gp }}</p>
+                        <p><strong>Total Optimized GP:</strong> {{ total_gp }}</p>
                         <p><strong>Average Optimized GP%:</strong> {{ avg_gp_per }}</p>
                     </div>
 
