@@ -101,13 +101,25 @@ final_df = mean_columns_by_prefix(final_df, "ROI_", "Avg_ROI")
 
 final_df['Net_ROI'] = round(final_df['Total_Sales']/final_df['Total_Spend'],2)
 
+#Add a negative spend column which we can apply maximization function
+final_df['Spend_Negative'] = -final_df['Total_Spend']
+
+# final_df.to_csv('spend_universe.csv', index=False)
+
 #write the data to neondb
-final_df.to_sql('spend_universe', ndb.engine, if_exists='replace', index=False)
+try:
+    final_df.to_sql('spend_universe', ndb.engine, if_exists='replace', index=False)
+    print("Data written to spend_universe successfully")
+except Exception as e:
+    print(f"An error occurred: {e}")
+    ndb.conn.rollback()  # Rollback the transaction
+    print("Transaction rolled back")
 
 #######Close cursor and connection pool##########
 # Close the cursor and return the connection to the pool
-ndb.cur.close()
-ndb.connection_pool.putconn(ndb.conn)
+finally:
+    ndb.cur.close()
+    ndb.connection_pool.putconn(ndb.conn)
 
 # Close all connections in the pool
 ndb.connection_pool.closeall()

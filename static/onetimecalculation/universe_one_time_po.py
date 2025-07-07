@@ -21,7 +21,7 @@ for brand in brands:
     m = df[df['Article#']==brand]['m'].iloc[0]
     c = df[df['Article#']==brand]['c'].iloc[0]
     # brand_arr.append(brand)
-    for price in range (nlc,mop,500):
+    for price in range (nlc,mop,1000):
         quantity = price*m + c
         brand_arr.append([brand,price,quantity])       
     df_pde = pd.DataFrame(brand_arr)
@@ -88,6 +88,7 @@ def mean_columns_by_prefix(df, prefix, new_col_name):
 final_df = sum_columns_by_prefix(final_df, "GMV_", "Total_GMV")
 final_df = sum_columns_by_prefix(final_df, "GP_", "Total_GP")
 final_df = mean_columns_by_prefix(final_df, "GP_%", "Avg_GP_per")
+final_df['Net_GP_per'] = final_df['Total_GP'] / final_df['Total_GMV']*100
 
 print(final_df.shape)
 # final_df.to_csv('universe_of_combination.csv',index=False)
@@ -98,7 +99,7 @@ final_df.to_sql('price_universe', ndb.engine, if_exists='replace', index=False)
 
 #######Close cursor and connection pool##########
 # Close the cursor and return the connection to the pool
-ndb.cur.close()
+ndb.cur.close() 
 ndb.connection_pool.putconn(ndb.conn)
 
 # Close all connections in the pool

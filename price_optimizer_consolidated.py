@@ -45,11 +45,11 @@ def run_price_optimizer(upload_file_path, input_file_path):
 
     ###______________OBJ FUNCTION__________
     if df['Sales Maximization'][0] == 1:
-        obj_function = 'Sales Maximization'
+        max_table_col_name = "Total_GMV"
     elif df['Profit Maximization'][0] == 1:
-        obj_function = 'Profit Maximization'
+        max_table_col_name = 'Total_GP'
     elif df['Profitability Maximization'][0] == 1:
-        obj_function = 'Profitability Maximization'
+        max_table_col_name = 'Net_GP_per'
     else:
         obj_function = 'Undefined'
 
@@ -146,7 +146,10 @@ def run_price_optimizer(upload_file_path, input_file_path):
     # build the SQL query with constraints
 
 
-    query = text(""" select * from price_universe 
+    query = text(""" 
+                 with constraint_query as
+                 (
+                 select * from price_universe 
                  where "Total_GMV">= :sales_constraint_lower and "Total_GMV"<= :sales_constraint_upper
                  and "Total_GP">= :profit_constraint_lower and "Total_GP" <= :profit_constraint_upper
                  and ("Total_GP"/"Total_GMV")*100 >= :profitability_constraint_lower and ("Total_GP"/"Total_GMV")*100 <= :profitability_constraint_upper
@@ -161,8 +164,10 @@ def run_price_optimizer(upload_file_path, input_file_path):
                  and "Discount_%_IFB" >= :ifb_discount_constraint_min and "Discount_%_IFB" <= :ifb_discount_constraint_max
                  and "Discount_%_LG" >= :lg_discount_constraint_min and "Discount_%_LG" <= :lg_discount_constraint_max
                  and "Discount_%_Samsung" >= :samsung_discount_constraint_min and "Discount_%_Samsung" <= :samsung_discount_constraint_max
-                 and "Discount_%_Whirlpool" >= :whirlpool_discount_constraint_min and "Discount_%_Whirlpool" <= :whirlpool_discount_constraint_max                   
-                 """)
+                 and "Discount_%_Whirlpool" >= :whirlpool_discount_constraint_min and "Discount_%_Whirlpool" <= :whirlpool_discount_constraint_max
+                )
+                 select * from constraint_query where "{}" = (select max("{}") from constraint_query)
+                 """.format(max_table_col_name, max_table_col_name))
     params = {
         'sales_constraint_lower':sales_constraint_lower,
         'sales_constraint_upper':sales_constraint_upper,
@@ -195,10 +200,12 @@ def run_price_optimizer(upload_file_path, input_file_path):
         'whirlpool_discount_constraint_min': whirlpool_discount_constraint_min,
         'whirlpool_discount_constraint_max': whirlpool_discount_constraint_max
     }
-
+    print(query)
     # Execute the query with parameters
     df_universe = pd.read_sql_query(query, con=ndb.engine,params=params)
-
+    print(df_universe.head())
+    print("max table col name:",max_table_col_name)
+    
     
     # New Constraint: Sum of all quantities sold should be within 50% of total units from upload_file
     df_universe['Total_Units_Sold'] = (
@@ -210,18 +217,19 @@ def run_price_optimizer(upload_file_path, input_file_path):
         pd.to_numeric(df_universe['Units_Whirlpool'], errors='coerce').fillna(0)
     )
 
+    output_df = df_universe
         
 
     #########___________Run objective function_________
 
-    if obj_function == 'Sales Maximization':
-        output_df = df_universe[df_universe['Total_GMV'] == df_universe['Total_GMV'].max()]
-    elif obj_function == 'Profit Maximization':
-        output_df = df_universe[df_universe['Total_GP'] == df_universe['Total_GP'].max()]
-    elif obj_function == 'Profitability Maximization':
-        output_df = df_universe[df_universe['Total_GMV']/df_universe['Total_GP'] == df_universe['Total_GMV']/df_universe['Total_GP'].max()]
-    else:  # Default: maximize sales
-        output_df = df_universe[df_universe['Total_GMV'] == df_universe['Total_GMV'].max()]
+    # if obj_function == 'Sales Maximization':
+    #     output_df = df_universe[df_universe['Total_GMV'] == df_universe['Total_GMV'].max()]
+    # elif obj_function == 'Profit Maximization':
+    #     output_df = df_universe[df_universe['Total_GP'] == df_universe['Total_GP'].max()]
+    # elif obj_function == 'Profitability Maximization':
+    #     output_df = df_universe[df_universe['Total_GMV']/df_universe['Total_GP'] == df_universe['Total_GMV']/df_universe['Total_GP'].max()]
+    # else:  # Default: maximize sales
+    #     output_df = df_universe[df_universe['Total_GMV'] == df_universe['Total_GMV'].max()]
 
     ##############____________Re-arrange the output frame to showcase on app_______
 
