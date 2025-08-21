@@ -31,7 +31,7 @@ def run_mmm_optimizer(base_file_path, input_file_path):
         max_table_col_name = "Total_Sales"
     elif (df_input['Spend Minimization'][0] ==1):
         # df_output = df_universe[df_universe['Total_Spend']==df_universe['Total_Spend'].min()]
-        max_table_col_name = "Spend_Negative"  # Negative spend for minimization
+        max_table_col_name = "spend_negative"  # Negative spend for minimization
     else:
         # df_output = df_universe[df_universe['Net_ROI']==df_universe['Net_ROI'].max()]
         max_table_col_name = "Net_ROI"

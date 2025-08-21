@@ -99,7 +99,7 @@ def mean_columns_by_prefix(df, prefix, new_col_name):
 
 final_df = mean_columns_by_prefix(final_df, "ROI_", "Avg_ROI")
 
-final_df['Net_ROI'] = round(final_df['Total_Sales']/final_df['Total_Spend'],2)
+final_df['Net_ROI'] = final_df['Total_Sales']/final_df['Total_Spend']
 
 #Add a negative spend column which we can apply maximization function
 final_df['Spend_Negative'] = -final_df['Total_Spend']
